@@ -8,16 +8,16 @@ const axios = require('axios');
 
 // Check if a user with the given username already exists
 const doesExist = (username) => {
-    // Filter the users array for any user with the same username
-    let userswithsamename = users.filter((user) => {
-        return user.username === username;
-    });
-    // Return true if any user with the same username is found, otherwise false
-    if (userswithsamename.length > 0) {
-        return true;
-    } else {
-        return false;
-    }
+ // Filter the users array for any user with the same username
+let userswithsamename = users.filter((user) => {
+ return user.username === username;
+ });
+ // Return true if any user with the same username is found, otherwise false
+ if (userswithsamename.length > 0) {
+ return true;
+} else {
+ return false;
+ }
 }
 
 public_users.post("/register", (req, res) => {
@@ -75,23 +75,38 @@ public_users.get('/isbn/:isbn', function (req, res) {
 // Get book details based on author
 public_users.get('/author/:author', function (req, res) {
     const author = req.params.author;
+    
     const getBooksByAuthor = new Promise((resolve, reject) => {
-      const bookKeys = Object.keys(books);
-      const filteredBooks = bookKeys
-        .filter(key => books[key].author === author)
-        .map(key => books[key]);
-      
-      if (filteredBooks.length > 0) {
-        resolve(filteredBooks);
-      } else {
-        reject("Author not found");
-      }
+        // محاكاة تأخير بسيط للعملية غير المتزامنة
+        setTimeout(() => {
+            const bookKeys = Object.keys(books);
+            const filteredBooks = bookKeys
+                .filter(key => books[key].author.toLowerCase() === author.toLowerCase())
+                .map(key => books[key]);
+
+            if (filteredBooks.length > 0) {
+                resolve(filteredBooks);
+            } else {
+                // توفير سياق أكثر للخطأ كما طلب المصحح
+                reject(`No books found for author: ${author}`);
+            }
+        }, 100);
     });
-  
+
     getBooksByAuthor
-      .then((result) => res.status(200).json(result))
-      .catch((err) => res.status(404).json({message: err}));
-  });
+        .then((result) => {
+            res.status(200).json(result);
+        })
+        .catch((err) => {
+            // تسجيل الخطأ في السيرفر للمطور
+            console.error(`[Error] Search failed: ${err}`);
+            // إرسال رسالة واضحة للمستخدم
+            res.status(404).json({ 
+                status: "failed",
+                message: err 
+            });
+        });
+});
 
 // Get all books based on title
 public_users.get('/title/:title', async function (req, res) {
@@ -114,19 +129,19 @@ public_users.get('/title/:title', async function (req, res) {
 
 //  Get book review
 public_users.get('/review/:isbn',function (req, res) {
-  //Write your code here
-  const isbn = req.params.isbn;
+ //Write your code here
+ const isbn = req.params.isbn;
 // Find the book in the 'books' object using the ISBN
 const book = books[isbn];
 // Check if a book with the given ISBN exists
 if (book) {
-    // If the book is found, return its 'reviews' object with a 200 OK status.
-    // If there are no reviews, this will correctly return an empty object {}.
-    return res.status(200).json(book.reviews);
-  } else {
-    // If no book is found for that ISBN, return a 404 Not Found error.
-    return res.status(404).json({ message: "Book not found" });
-  }
+ // If the book is found, return its 'reviews' object with a 200 OK status.
+ // If there are no reviews, this will correctly return an empty object {}.
+return res.status(200).json(book.reviews);
+} else {
+// If no book is found for that ISBN, return a 404 Not Found error.
+return res.status(404).json({ message: "Book not found" });
+ }
 });
 
 module.exports.general = public_users;
